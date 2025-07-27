@@ -185,7 +185,7 @@ def relatorio_engajamento():
 
     # 🖼️ Enviar a imagem do troféu primeiro
     try:
-        with open("pngtree-elegant-gold-trophy-cup-award-championship-victory-symbol-sports-competition-prize-png-image_15444013.png", "rb") as trofeu_img:
+        with open("trofeu_espartano.png", "rb") as img:
             bot.send_photo(ID_GRUPO, photo=trofeu_img, caption="🏆")
     except Exception as e:
         print(f"❌ Erro ao enviar imagem do troféu: {e}")
