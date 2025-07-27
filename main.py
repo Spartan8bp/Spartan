@@ -71,7 +71,7 @@ def sem_usuario_ou_foto(user, bot_instance):
         sem_foto = not fotos or fotos.total_count == 0
     except Exception as e:
         print(f"Erro ao buscar foto de perfil: {e}")
-        sem_foto = True
+        sem_foto = False  # <-- Evita falsos positivos
     return sem_usu, sem_foto
 
 # 📢 --- HANDLERS DE EVENTOS ---
@@ -125,8 +125,9 @@ def detectar_risadas(msg):
     texto = (msg.text or '').lower()
     if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
         frases = carregar_json(ARQUIVOS_JSON["risadas"])
-        resposta = escolher_frase(frases)
-        bot.reply_to(msg, f"😂 Rindo de nervoso, {nome_ou_mention(msg.from_user)}.\n{resposta}")
+        nome = nome_ou_mention(msg.from_user)
+        resposta = escolher_frase(frases).replace("{nome}", nome)
+        bot.reply_to(msg, f"😂 Rindo de nervoso, {nome}.\n{resposta}")
 
 def detectar_madrugada(msg):
     hora = agora_brasilia().hour
