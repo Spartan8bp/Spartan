@@ -160,34 +160,38 @@ def relatorio_engajamento():
 
     top3 = sorted(contador_mensagens.items(), key=lambda x: x[1], reverse=True)[:3]
     frases = carregar_json(ARQUIVOS_JSON["engajamento"])
+    texto = "📊 RELATÓRIO DE ENGAJAMENTO DIÁRIO\n\n"
 
-    if not top3:
-        return
+    if top3:
+        # 🥇 Primeiro lugar
+        uid1, qtd1 = top3[0]
+        user1 = bot.get_chat_member(ID_GRUPO, uid1).user
+        nome1 = user1.first_name
+        frase_destaque = escolher_frase(frases).replace("{nome}", nome1)
+        texto += f"🥇 {nome1} — 🗣️ {frase_destaque}\n\n"
+        texto += f"🥇 1º lugar: {nome1} — {qtd1} mensagens\n"
 
-    mensagens = ["📊 RELATÓRIO DE ENGAJAMENTO DIÁRIO\n"]
+        # 🥈 Segundo lugar
+        if len(top3) > 1:
+            uid2, qtd2 = top3[1]
+            nome2 = bot.get_chat_member(ID_GRUPO, uid2).user.first_name
+            texto += f"🥈 2º lugar: {nome2} — {qtd2} mensagens\n"
 
-    # 🥇 Primeiro lugar com frase especial
+        # 🥉 Terceiro lugar
+        if len(top3) > 2:
+            uid3, qtd3 = top3[2]
+            nome3 = bot.get_chat_member(ID_GRUPO, uid3).user.first_name
+            texto += f"🥉 3º lugar: {nome3} — {qtd3} mensagens"
+
+    # 🖼️ Enviar a imagem do troféu primeiro
     try:
-        user_info = bot.get_chat_member(ID_GRUPO, top3[0][0]).user
-        nome1 = user_info.first_name or "Espartano"
-    except:
-        nome1 = "Espartano"
+        with open("pngtree-elegant-gold-trophy-cup-award-championship-victory-symbol-sports-competition-prize-png-image_15444013.png", "rb") as trofeu_img:
+            bot.send_photo(ID_GRUPO, photo=trofeu_img, caption="🏆")
+    except Exception as e:
+        print(f"❌ Erro ao enviar imagem do troféu: {e}")
 
-    frase_especial = escolher_frase(frases).replace("{nome}", nome1)
-    mensagens.append(f"🥇 {nome1} — {frase_especial}")
-
-    # 🥈 e 🥉 apenas com nome
-    medalhas = ["🥈", "🥉"]
-    for i, (uid, _) in enumerate(top3[1:], start=1):
-        try:
-            user_info = bot.get_chat_member(ID_GRUPO, uid).user
-            nome = user_info.first_name or "Espartano"
-        except:
-            nome = "Espartano"
-        mensagens.append(f"{medalhas[i-1]} {nome}")
-
-    texto_final = "\n".join(mensagens)
-    bot.send_message(ID_GRUPO, texto_final)
+    # 📊 Enviar o relatório após a imagem
+    bot.send_message(ID_GRUPO, texto)
     contador_mensagens.clear()
 
 # 🔁 --- AGENDADOR EM THREAD SEPARADA ---
