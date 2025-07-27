@@ -157,17 +157,37 @@ def parabens_do_mes():
 def relatorio_engajamento():
     if not contador_mensagens:
         return
+
     top3 = sorted(contador_mensagens.items(), key=lambda x: x[1], reverse=True)[:3]
     frases = carregar_json(ARQUIVOS_JSON["engajamento"])
-    texto = f"📊 Relatório de Engajamento:\n"
-    if top3:
-        top_nome = nome_ou_mention(bot.get_chat_member(ID_GRUPO, top3[0][0]).user)
-        texto += f"🥇 {top_nome} — {escolher_frase(frases)}\n"
-    for i, (uid, _) in enumerate(top3[1:], start=2):
-        nome = nome_ou_mention(bot.get_chat_member(ID_GRUPO, uid).user)
-        medalha = "🥈" if i == 2 else "🥉"
-        texto += f"{medalha} {nome}\n"
-    bot.send_message(ID_GRUPO, texto)
+
+    if not top3:
+        return
+
+    mensagens = ["📊 RELATÓRIO DE ENGAJAMENTO DIÁRIO\n"]
+
+    # 🥇 Primeiro lugar com frase especial
+    try:
+        user_info = bot.get_chat_member(ID_GRUPO, top3[0][0]).user
+        nome1 = user_info.first_name or "Espartano"
+    except:
+        nome1 = "Espartano"
+
+    frase_especial = escolher_frase(frases).replace("{nome}", nome1)
+    mensagens.append(f"🥇 {nome1} — {frase_especial}")
+
+    # 🥈 e 🥉 apenas com nome
+    medalhas = ["🥈", "🥉"]
+    for i, (uid, _) in enumerate(top3[1:], start=1):
+        try:
+            user_info = bot.get_chat_member(ID_GRUPO, uid).user
+            nome = user_info.first_name or "Espartano"
+        except:
+            nome = "Espartano"
+        mensagens.append(f"{medalhas[i-1]} {nome}")
+
+    texto_final = "\n".join(mensagens)
+    bot.send_message(ID_GRUPO, texto_final)
     contador_mensagens.clear()
 
 # 🔁 --- AGENDADOR EM THREAD SEPARADA ---
@@ -182,7 +202,7 @@ def agendador():
             parabens_aniversariantes()
         if hora == "11:00":
             parabens_do_mes()
-        if hora == "12:00" or hora == "23:00":
+        if hora == "12:35" or hora == "23:00":
             relatorio_engajamento()
 
         time.sleep(60)
