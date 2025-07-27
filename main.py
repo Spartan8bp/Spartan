@@ -169,19 +169,19 @@ def relatorio_engajamento():
         nome1 = user1.first_name
         frase_destaque = escolher_frase(frases).replace("{nome}", nome1)
         texto += f"🥇 {nome1} — 🗣️ {frase_destaque}\n\n"
-        texto += f"🥇 1º lugar: {nome1} — {qtd1} mensagens\n"
+        texto += f"🥇 1º lugar: {nome1} — {qtd1} msg\n"
 
         # 🥈 Segundo lugar
         if len(top3) > 1:
             uid2, qtd2 = top3[1]
             nome2 = bot.get_chat_member(ID_GRUPO, uid2).user.first_name
-            texto += f"🥈 2º lugar: {nome2} — {qtd2} mensagens\n"
+            texto += f"🥈 2º lugar: {nome2} — {qtd2} msg\n"
 
         # 🥉 Terceiro lugar
         if len(top3) > 2:
             uid3, qtd3 = top3[2]
             nome3 = bot.get_chat_member(ID_GRUPO, uid3).user.first_name
-            texto += f"🥉 3º lugar: {nome3} — {qtd3} mensagens"
+            texto += f"🥉 3º lugar: {nome3} — {qtd3} msg"
 
     # 🖼️ Enviar a imagem do troféu primeiro
     try:
@@ -206,7 +206,7 @@ def agendador():
             parabens_aniversariantes()
         if hora == "11:00":
             parabens_do_mes()
-        if hora == "13:42" or hora == "23:00":
+        if hora == "13:55" or hora == "23:00":
             relatorio_engajamento()
 
         time.sleep(60)
