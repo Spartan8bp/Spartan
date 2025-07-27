@@ -65,13 +65,15 @@ def nome_ou_mention(user):
     return user.first_name or "Usuário"
 
 def sem_usuario_ou_foto(user, bot_instance):
-    sem_usu = not bool(user.username)
+    sem_usu = not user.username  # Checa se não tem @usuario
+
     try:
         fotos = bot_instance.get_user_profile_photos(user.id, limit=1)
-        sem_foto = not fotos or fotos.total_count == 0
+        sem_foto = fotos.total_count == 0
     except Exception as e:
-        print(f"Erro ao buscar foto de perfil: {e}")
-        sem_foto = False  # <-- Evita falsos positivos
+        print(f"[AVISO] Erro ao buscar foto de perfil de {user.id}: {e}")
+        sem_foto = False  # Evita avisar errado por falha da API
+
     return sem_usu, sem_foto
 
 # 📢 --- HANDLERS DE EVENTOS ---
