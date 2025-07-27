@@ -106,13 +106,13 @@ def monitorar_mensagens(msg):
     contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
 
     # ⚠️ Perfil incompleto (sem username ou sem foto de perfil)
-sem_usu, sem_foto = sem_usuario_ou_foto(user, bot)
-if (sem_usu or sem_foto) and (user.id not in usuarios_sem_perfil_avisados):
-    frases = carregar_json(ARQUIVOS_JSON["sem_perfil"])
-    nome = nome_ou_mention(user)
-    texto = escolher_frase(frases).replace("{nome}", nome)
-    bot.reply_to(msg, f"⚠️ {texto}")
-    usuarios_sem_perfil_avisados.add(user.id)
+    sem_usu, sem_foto = sem_usuario_ou_foto(user, bot)
+    if (sem_usu or sem_foto) and (user.id not in usuarios_sem_perfil_avisados):
+        frases = carregar_json(ARQUIVOS_JSON["sem_perfil"])
+        nome = nome_ou_mention(user)
+        texto = escolher_frase(frases).replace("{nome}", nome)
+        bot.reply_to(msg, f"⚠️ {texto}")
+        usuarios_sem_perfil_avisados.add(user.id)
 
     # 🤖 Detectores
     detectar_cade_samuel(msg)
