@@ -160,7 +160,7 @@ def relatorio_engajamento():
 
     top3 = sorted(contador_mensagens.items(), key=lambda x: x[1], reverse=True)[:3]
     frases = carregar_json(ARQUIVOS_JSON["engajamento"])
-    texto = "📊 ENGAJAMENTO DIÁRIO\n\n"
+    texto = "📊 ENGAJAMENTO DIÁRIO 🏆🏆🏆\n\n"
 
     if top3:
         # 🥇 Primeiro lugar
@@ -206,7 +206,7 @@ def agendador():
             parabens_aniversariantes()
         if hora == "11:00":
             parabens_do_mes()
-        if hora == "13:32" or hora == "23:00":
+        if hora == "13:42" or hora == "23:00":
             relatorio_engajamento()
 
         time.sleep(60)
