@@ -125,7 +125,7 @@ def detectar_risadas(msg):
     texto = (msg.text or '').lower()
     if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
         frases = carregar_json(ARQUIVOS_JSON["risadas"])
-        nome = nome_ou_mention(msg.from_user)
+        nome = msg.from_user.first_name
         resposta = escolher_frase(frases).replace("{nome}", nome)
         bot.reply_to(msg, resposta)
 
