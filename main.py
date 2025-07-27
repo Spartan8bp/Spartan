@@ -219,7 +219,7 @@ def agendador():
             parabens_aniversariantes()
         if hora == "11:00":
             parabens_do_mes()
-        if hora == "13:55" or hora == "23:00":
+        if hora == "12:00" or hora == "23:00":
             relatorio_engajamento()
 
         time.sleep(60)
