@@ -83,7 +83,7 @@ def despedida_handler(message):
     nome = nome_ou_mention(message.left_chat_member)
     frases = carregar_json(ARQUIVOS_JSON["despedidas"])
     texto = escolher_frase(frases).replace("{nome}", nome)
-    bot.reply_to(message, f"👋 {nome} {texto}")
+    bot.reply_to(message, texto)
 
 usuarios_sem_perfil_avisados = set()
 
