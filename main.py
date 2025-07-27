@@ -160,7 +160,7 @@ def relatorio_engajamento():
 
     top3 = sorted(contador_mensagens.items(), key=lambda x: x[1], reverse=True)[:3]
     frases = carregar_json(ARQUIVOS_JSON["engajamento"])
-    texto = "📊 RELATÓRIO DE ENGAJAMENTO DIÁRIO\n\n"
+    texto = "📊 ENGAJAMENTO DIÁRIO\n\n"
 
     if top3:
         # 🥇 Primeiro lugar
