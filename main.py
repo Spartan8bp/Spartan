@@ -74,14 +74,14 @@ def sem_usuario_ou_foto(user, bot_instance):
     return sem_usu, sem_foto
 
 # 📢 --- HANDLERS DE EVENTOS ---
-@bot.message_handler(content_types=['new_chat_members'])
+@bot.message_handler(content_types=["new_chat_members"])
 def boas_vindas_handler(message):
     for membro in message.new_chat_members:
         nome = nome_ou_mention(membro)
         frases = carregar_json(ARQUIVOS_JSON["bem_vindas"])
         texto = escolher_frase(frases)
-        bot.reply_to(message, f"🎈 Olá, {nome}!
-\n{texto}")
+        bot.reply_to(message, f"""🎈 Olá, {nome}!
+{texto}""")
 
 @bot.message_handler(content_types=['left_chat_member'])
 def despedida_handler(message):
