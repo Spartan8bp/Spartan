@@ -8,7 +8,7 @@ import random
 import re
 
 # ✅ CONFIGURAÇÕES GERAIS
-TOKEN = 'SEU_TOKEN_AQUI'
+TOKEN = '8307062095:AAE3RbmLV5p7brAPJNkDL-0nO79ejKib8Eg'
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 ID_GRUPO = -1002363575666
