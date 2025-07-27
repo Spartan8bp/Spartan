@@ -66,14 +66,12 @@ def nome_ou_mention(user):
 
 def sem_usuario_ou_foto(user, bot_instance):
     sem_usu = not bool(user.username)
-
     try:
         fotos = bot_instance.get_user_profile_photos(user.id, limit=1)
         sem_foto = not fotos or fotos.total_count == 0
     except Exception as e:
         print(f"Erro ao buscar foto de perfil: {e}")
-        sem_foto = True  # Se der erro, assume que está sem foto (mas pode ajustar)
-        
+        sem_foto = True
     return sem_usu, sem_foto
 
 # 📢 --- HANDLERS DE EVENTOS ---
@@ -101,11 +99,8 @@ def monitorar_mensagens(msg):
         return
 
     user = msg.from_user
-
-    # 🔍 Engajamento
     contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
 
-    # ⚠️ Perfil incompleto (sem username ou sem foto de perfil)
     sem_usu, sem_foto = sem_usuario_ou_foto(user, bot)
     if (sem_usu or sem_foto) and (user.id not in usuarios_sem_perfil_avisados):
         frases = carregar_json(ARQUIVOS_JSON["sem_perfil"])
@@ -114,7 +109,6 @@ def monitorar_mensagens(msg):
         bot.reply_to(msg, f"⚠️ {texto}")
         usuarios_sem_perfil_avisados.add(user.id)
 
-    # 🤖 Detectores
     detectar_cade_samuel(msg)
     detectar_risadas(msg)
     detectar_madrugada(msg)
@@ -198,7 +192,7 @@ def agendador():
         if hora == "12:00" or hora == "23:00":
             relatorio_engajamento()
 
-        time.sleep(60)  # ⏳ Checa a cada minuto
+        time.sleep(60)
 
 threading.Thread(target=agendador).start()
 
