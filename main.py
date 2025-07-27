@@ -64,17 +64,8 @@ def nome_ou_mention(user):
         return f"@{user.username}"
     return user.first_name or "Usuário"
 
-def sem_usuario_ou_foto(user, bot_instance):
-    sem_usu = not user.username  # Checa se não tem @usuario
-
-    try:
-        fotos = bot_instance.get_user_profile_photos(user.id, limit=1)
-        sem_foto = fotos.total_count == 0
-    except Exception as e:
-        print(f"[AVISO] Erro ao buscar foto de perfil de {user.id}: {e}")
-        sem_foto = False  # Evita avisar errado por falha da API
-
-    return sem_usu, sem_foto
+def sem_usuario(user):
+    return not bool(user.username)
 
 # 📢 --- HANDLERS DE EVENTOS ---
 @bot.message_handler(content_types=["new_chat_members"])
@@ -103,8 +94,7 @@ def monitorar_mensagens(msg):
     user = msg.from_user
     contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
 
-    sem_usu, sem_foto = sem_usuario_ou_foto(user, bot)
-    if (sem_usu or sem_foto) and (user.id not in usuarios_sem_perfil_avisados):
+    if sem_usuario(user) and (user.id not in usuarios_sem_perfil_avisados):
         frases = carregar_json(ARQUIVOS_JSON["sem_perfil"])
         nome = nome_ou_mention(user)
         texto = escolher_frase(frases).replace("{nome}", nome)
