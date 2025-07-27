@@ -74,7 +74,7 @@ def boas_vindas_handler(message):
     for membro in message.new_chat_members:
         nome = nome_ou_mention(membro)
         frases = carregar_json(ARQUIVOS_JSON["bem_vindas"])
-        texto = escolher_frase(frases)
+        texto = escolher_frase(frases).replace("{nome}", nome)
         bot.reply_to(message, f"""🎈 Olá, {nome}!
 {texto}""")
 
@@ -82,7 +82,7 @@ def boas_vindas_handler(message):
 def despedida_handler(message):
     nome = nome_ou_mention(message.left_chat_member)
     frases = carregar_json(ARQUIVOS_JSON["despedidas"])
-    texto = escolher_frase(frases)
+    texto = escolher_frase(frases).replace("{nome}", nome)
     bot.reply_to(message, f"👋 {nome} {texto}")
 
 usuarios_sem_perfil_avisados = set()
@@ -111,7 +111,7 @@ def detectar_cade_samuel(msg):
     padrao = r"\b(cad[eê]|onde|t[áa]|est[áa]|sumiu).*(samuel|samuca|samuka|chefe|dono)\b"
     if re.search(padrao, texto):
         frases = carregar_json(ARQUIVOS_JSON["cade_samuel"])
-        resposta = escolher_frase(frases)
+        resposta = escolher_frase(frases).replace("{nome}", nome)
         bot.reply_to(msg, resposta)
 
 def detectar_risadas(msg):
@@ -144,7 +144,7 @@ def detectar_madrugada(msg):
 # 🎉 --- AÇÕES AGENDADAS ---
 def enviar_motivacional():
     frases = carregar_json(ARQUIVOS_JSON["motivacionais"])
-    frase = escolher_frase(frases)
+    frase = escolher_frase(frases).replace("{nome}", nome)
     bot.send_message(ID_GRUPO, f"💪 {frase}")
 
 def parabens_aniversariantes():
@@ -163,7 +163,7 @@ def parabens_do_mes():
         mes = agora.strftime('%m')
         aniversariantes = carregar_json(ARQUIVOS_JSON["dados_mes"]).get(mes, [])
         frases = carregar_json(ARQUIVOS_JSON["aniversarios_mes"])
-        frase = escolher_frase(frases)
+        frase = escolher_frase(frases).replace("{nome}", nome)
         lista_nomes = "\n".join(aniversariantes)
         bot.send_message(ID_GRUPO, f"🎉 Aniversariantes de {agora.strftime('%B')}:\n{lista_nomes}\n\n{frase}")
 
