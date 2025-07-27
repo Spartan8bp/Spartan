@@ -186,7 +186,7 @@ def relatorio_engajamento():
     # 🖼️ Enviar a imagem do troféu primeiro
     try:
         with open("trofeu_espartano.png", "rb") as img:
-            bot.send_photo(ID_GRUPO, photo=trofeu_img, caption="🏆")
+            bot.send_photo(ID_GRUPO, photo=img, caption="🏆")
     except Exception as e:
         print(f"❌ Erro ao enviar imagem do troféu: {e}")
 
@@ -206,7 +206,7 @@ def agendador():
             parabens_aniversariantes()
         if hora == "11:00":
             parabens_do_mes()
-        if hora == "13:20" or hora == "23:00":
+        if hora == "13:32" or hora == "23:00":
             relatorio_engajamento()
 
         time.sleep(60)
