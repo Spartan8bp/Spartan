@@ -12,7 +12,7 @@ from flask import Flask, request
 import telebot
 
 # 🛡️ --- CONFIGURAÇÕES DO BOT ---
-TOKEN = 'SEU_TOKEN_AQUI'  # ⚠️ Coloque seu token aqui com segurança, nunca compartilhe!
+TOKEN = '8307062095:AAE3RbmLV5p7brAPJNkDL-0nO79ejKib8Eg'  # ⚠️ Coloque seu token aqui com segurança, nunca compartilhe!
 ID_GRUPO = -1002363575666  # ⚠️ ID do grupo Telegram
 ID_DONO = 1481389775       # ⚠️ ID do dono (você)
 
