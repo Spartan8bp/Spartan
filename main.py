@@ -127,7 +127,7 @@ def detectar_risadas(msg):
         frases = carregar_json(ARQUIVOS_JSON["risadas"])
         nome = nome_ou_mention(msg.from_user)
         resposta = escolher_frase(frases).replace("{nome}", nome)
-        bot.reply_to(msg, f"😂 Rindo de nervoso, {nome}.\n{resposta}")
+        bot.reply_to(msg, resposta)
 
 def detectar_madrugada(msg):
     hora = agora_brasilia().hour
