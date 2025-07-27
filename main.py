@@ -41,6 +41,7 @@ ARQUIVOS_JSON = {
 
 # 🔁 Dados de engajamento diário
 contador_mensagens = {}
+ultimo_risada_respondida = {}  # user_id: datetime
 
 # 📌 --- FUNÇÕES UTILITÁRIAS ---
 def carregar_json(nome_arquivo):
@@ -115,11 +116,23 @@ def detectar_cade_samuel(msg):
 
 def detectar_risadas(msg):
     texto = (msg.text or '').lower()
+    user_id = msg.from_user.id
+    agora = agora_brasilia()
+
+    # Verifica se é risada
     if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
+        # Se já respondeu esse usuário nos últimos 120 minutos, ignore
+        ultima_resposta = ultimo_risada_respondida.get(user_id)
+        if ultima_resposta and (agora - ultima_resposta).total_seconds() < 2 * 60 * 60:
+            return
+
         frases = carregar_json(ARQUIVOS_JSON["risadas"])
         nome = msg.from_user.first_name or "Espartano"
         resposta = escolher_frase(frases).replace("{nome}", nome)
         bot.reply_to(msg, resposta)
+
+        # Atualiza o horário da última resposta
+        ultimo_risada_respondida[user_id] = agora
 
 def detectar_madrugada(msg):
     hora = agora_brasilia().hour
