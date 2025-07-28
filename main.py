@@ -68,6 +68,13 @@ def nome_ou_mention(user):
 def sem_usuario(user):
     return not bool(user.username)
 
+# 🕒 Enviar mensagens com atraso
+def responder_com_atraso(funcao_envio, *args, delay=20):
+    def enviar():
+        time.sleep(delay)
+        funcao_envio(*args)
+    threading.Thread(target=enviar).start()
+
 # 📢 --- HANDLERS DE EVENTOS ---
 @bot.message_handler(content_types=["new_chat_members"])
 def boas_vindas_handler(message):
@@ -99,7 +106,7 @@ def monitorar_mensagens(msg):
         frases = carregar_json(ARQUIVOS_JSON["sem_perfil"])
         nome = nome_ou_mention(user)
         texto = escolher_frase(frases).replace("{nome}", nome)
-        bot.reply_to(msg, f"⚠️ {texto}")
+        responder_com_atraso(bot.reply_to, msg, f"⚠️ {texto}")
         usuarios_sem_perfil_avisados.add(user.id)
 
     detectar_cade_samuel(msg)
@@ -112,7 +119,7 @@ def detectar_cade_samuel(msg):
     if re.search(padrao, texto):
         frases = carregar_json(ARQUIVOS_JSON["cade_samuel"])
         resposta = escolher_frase(frases).replace("{nome}", nome)
-        bot.reply_to(msg, resposta)
+        responder_com_atraso(bot.reply_to, msg, resposta)
 
 def detectar_risadas(msg):
     texto = (msg.text or '').lower()
@@ -129,7 +136,7 @@ def detectar_risadas(msg):
         frases = carregar_json(ARQUIVOS_JSON["risadas"])
         nome = msg.from_user.first_name or "Espartano"
         resposta = escolher_frase(frases).replace("{nome}", nome)
-        bot.reply_to(msg, resposta)
+        responder_com_atraso(bot.reply_to, msg, resposta)
 
         # Atualiza o horário da última resposta
         ultimo_risada_respondida[user_id] = agora
@@ -139,7 +146,7 @@ def detectar_madrugada(msg):
     if 1 <= hora <= 5:
         frases = carregar_json(ARQUIVOS_JSON["madrugada"])
         texto = escolher_frase(frases).replace("{nome}", nome_ou_mention(msg.from_user))
-        bot.reply_to(msg, texto)
+        responder_com_atraso(bot.reply_to, msg, texto)
 
 # 🎉 --- AÇÕES AGENDADAS ---
 def enviar_motivacional():
