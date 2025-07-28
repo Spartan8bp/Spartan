@@ -82,7 +82,7 @@ def boas_vindas_handler(message):
         nome = nome_ou_mention(membro)
         frases = carregar_json(ARQUIVOS_JSON["bem_vindas"])
         texto = escolher_frase(frases).replace("{nome}", nome)
-        bot.reply_to(message, f"""🎈 Olá, {nome}!
+        bot.reply_to(message, texto)
 {texto}""")
 
 @bot.message_handler(content_types=['left_chat_member'])
