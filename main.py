@@ -83,7 +83,6 @@ def boas_vindas_handler(message):
         frases = carregar_json(ARQUIVOS_JSON["bem_vindas"])
         texto = escolher_frase(frases).replace("{nome}", nome)
         bot.reply_to(message, texto)
-{texto}""")
 
 @bot.message_handler(content_types=['left_chat_member'])
 def despedida_handler(message):
