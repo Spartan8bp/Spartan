@@ -89,8 +89,8 @@ usuarios_sem_perfil_avisados = set()
 
 @bot.message_handler(func=lambda msg: True)
 def monitorar_mensagens(msg):
-    if msg.chat.id != ID_GRUPO:
-        return
+    #if msg.chat.id != ID_GRUPO:
+    #    return
 
     user = msg.from_user
     contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
