@@ -170,10 +170,10 @@ def detectar_risadas(msg):
             if sticks:
                 responder_com_atraso(bot.send_sticker, msg.chat.id, random.choice(sticks))
         else:
-            frases = carregar_json(ARQUIVOS_JSON["risadas"])
-            nome = msg.from_user.first_name or "Espartano"
-            resposta = escolher_frase(frases).replace("{nome}", nome)
-            responder_com_atraso(bot.reply_to, msg, resposta)
+    frases = carregar_json(ARQUIVOS_JSON["risadas"])
+    nome = msg.from_user.first_name or "Espartano"
+    resposta = escolher_frase(frases).replace("{nome}", nome)
+    responder_com_atraso(bot.send_message, msg.chat.id, resposta)
 
         ultimo_risada_respondida[user_id] = agora
 def enviar_alerta_repeticao(chat_id):
