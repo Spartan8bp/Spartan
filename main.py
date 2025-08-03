@@ -168,7 +168,8 @@ def detectar_risadas(msg):
         if qtde_k >= 6:
             sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
             if sticks:
-                responder_com_atraso(bot.reply_to, msg, random.choice(sticks))
+                responder_com_atraso(bot.send_sticker, msg.chat.id, random.choice(sticks), reply_to_message_id=msg.message_id)
+
         else:
             frases = carregar_json(ARQUIVOS_JSON["risadas"])
             nome = msg.from_user.first_name or "Espartano"
