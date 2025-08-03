@@ -36,7 +36,8 @@ ARQUIVOS_JSON = {
     "sem_perfil": "frases_advertencia_sem_perfil.json",
     "engajamento": "frases_mais_engajado.json",
     "dados_aniversarios": "aniversarios_dia.json",
-    "dados_mes": "aniversarios_mes.json"
+    "dados_mes": "aniversarios_mes.json",
+    "sticks_risadas": "sticks_risadas.json"
 }
 
 # 🔁 Dados de engajamento diário
@@ -125,42 +126,25 @@ def detectar_risadas(msg):
     user_id = msg.from_user.id
     agora = agora_brasilia()
 
-    padrao_risada = r"(k{3,}|haha+h+|rsrs+|hehe+)"
-    match = re.search(padrao_risada, texto)
-
-    if match:
+    # Verifica se é risada
+    if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
         ultima_resposta = ultimo_risada_respondida.get(user_id)
+        intervalo = (agora - ultima_resposta).total_seconds() if ultima_resposta else None
+        if intervalo and intervalo < random.randint(15, 600):
+            return
 
-        # Tempo limite aleatório entre 15 segundos (15) e 10 minutos (600)
-        if ultima_resposta:
-            tempo_limite = random.randint(15, 600)
-            if (agora - ultima_resposta).total_seconds() < tempo_limite:
-                return  # Ainda dentro do intervalo
+        qtde_k = texto.count('k')
 
-        trecho = match.group()
-
-        if "k" in trecho:
-            qtd_k = trecho.count("k")
-            if qtd_k >= 6:
-                # Sticker para risada exagerada
-                lista_stickers = carregar_json(ARQUIVOS_JSON["stickers_risadas"])
-                if lista_stickers:
-                    escolhido = random.choice(lista_stickers)
-                    responder_com_atraso(bot.send_sticker, msg.chat.id, escolhido)
-            else:
-                # Resposta com frase
-                frases = carregar_json(ARQUIVOS_JSON["risadas"])
-                nome = msg.from_user.first_name or "Espartano"
-                resposta = escolher_frase(frases).replace("{nome}", nome)
-                responder_com_atraso(bot.reply_to, msg, resposta)
+        if qtde_k >= 6:
+            sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
+            if sticks:
+                responder_com_atraso(bot.send_sticker, msg.chat.id, random.choice(sticks))
         else:
-            # Resposta com frase para outras formas de riso
             frases = carregar_json(ARQUIVOS_JSON["risadas"])
             nome = msg.from_user.first_name or "Espartano"
             resposta = escolher_frase(frases).replace("{nome}", nome)
             responder_com_atraso(bot.reply_to, msg, resposta)
 
-        # Atualiza o tempo da última resposta
         ultimo_risada_respondida[user_id] = agora
 
 def detectar_madrugada(msg):
