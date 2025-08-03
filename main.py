@@ -179,7 +179,7 @@ def detectar_risadas(msg):
         ultimo_risada_respondida[user_id] = agora
         
 def enviar_alerta_repeticao(chat_id):
-    linha_sirene = "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨"
+    linha_sirene = "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨"
     linha1 = "EM ESPARTA, REPETIR É PUNIÇÃO"
     linha2 = "⚔️ESCREVA COM HONRA⚔️"
     mensagem_base = f"{linha_sirene}\n{linha1}\n{linha2}\n{linha_sirene}"
