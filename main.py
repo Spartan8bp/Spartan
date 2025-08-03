@@ -198,8 +198,6 @@ def enviar_alerta_repeticao(chat_id):
 
     threading.Thread(target=enviar_e_apagar).start()
 
-    threading.Thread(target=enviar_e_apagar).start()
-
 def detectar_madrugada(msg):
     hora = agora_brasilia().hour
     if 1 <= hora <= 5:
