@@ -125,8 +125,8 @@ def monitorar_mensagens(msg):
         historico = [m for m in historico if (agora - m[1]).total_seconds() < 60]
         historico_mensagens[user.id] = historico
 
-        # Verifica se há 2 ou mais mensagens repetidas consecutivas
-        if len(historico) >= 2 and all(m[0] == conteudo for m in historico[-2:]):
+        # Verifica se há 3 ou mais mensagens repetidas consecutivas
+        if len(historico) >= 3 and all(m[0] == conteudo for m in historico[-2:]):
             enviar_alerta_repeticao(msg.chat.id)
             historico_mensagens[user.id] = []  # limpa para não repetir
             return
@@ -187,7 +187,7 @@ def enviar_alerta_repeticao(chat_id):
     ids_msgs = []
 
     def enviar_e_apagar():
-        for _ in range(10):  # 10 balões
+        for _ in range(2):  # 2 balões
             bloco = "\n".join([mensagem_base] * 5)  # 5x4 = 20 linhas por balão
             msg = bot.send_message(chat_id, bloco)
             ids_msgs.append(msg.message_id)
