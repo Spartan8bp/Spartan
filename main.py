@@ -106,7 +106,7 @@ def monitorar_mensagens(msg):
     user = msg.from_user
     contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
 
-        # Verifica mensagens repetidas
+    # Verifica mensagens repetidas
     historico = historico_mensagens[user.id]
     conteudo = None
 
@@ -154,13 +154,11 @@ def detectar_cade_samuel(msg):
 def detectar_risadas(msg):
     texto = (msg.text or '').lower()
     user_id = msg.from_user.id
-    agora = agora_brasilia()
 
+    # Verifica se é risada
     if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
-        ultima_resposta = ultimo_risada_respondida.get(user_id)
-        intervalo = (agora - ultima_resposta).total_seconds() if ultima_resposta else float('inf')
-
-        if intervalo < 60:
+        # 50% de chance de ignorar completamente
+        if random.random() < 0.5:
             return
 
         qtde_k = texto.count('k')
@@ -168,13 +166,12 @@ def detectar_risadas(msg):
         if qtde_k >= 6:
             sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
             if sticks:
-                sticker = random.choice(sticks)
-                responder_com_atraso(bot.send_sticker, msg.chat.id, sticker, delay=2, reply_to_message_id=msg.message_id)
+                responder_com_atraso(bot.send_sticker, msg.chat.id, random.choice(sticks), delay=5)
         else:
             frases = carregar_json(ARQUIVOS_JSON["risadas"])
             nome = msg.from_user.first_name or "Espartano"
             resposta = escolher_frase(frases).replace("{nome}", nome)
-            responder_com_atraso(bot.reply_to, msg, resposta, delay=2)
+            responder_com_atraso(bot.reply_to, msg, resposta, delay=5)
 
         ultimo_risada_respondida[user_id] = agora
         
@@ -187,8 +184,8 @@ def enviar_alerta_repeticao(chat_id):
     ids_msgs = []
 
     def enviar_e_apagar():
-        for _ in range(2):  # 2 balões
-            bloco = "\n".join([mensagem_base] * 5)  # 5x4 = 20 linhas por balão
+        for _ in range(1):  # 1 balões
+            bloco = "\n".join([mensagem_base] * 10)  # 10x4 = 40 linhas por balão
             msg = bot.send_message(chat_id, bloco)
             ids_msgs.append(msg.message_id)
             time.sleep(0.5)
