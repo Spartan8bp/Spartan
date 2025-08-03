@@ -70,10 +70,10 @@ def sem_usuario(user):
     return not bool(user.username)
 
 # 🕒 Enviar mensagens com atraso
-def responder_com_atraso(funcao_envio, *args, delay=20):
+def responder_com_atraso(funcao_envio, *args, delay=20, **kwargs):
     def enviar():
         time.sleep(delay)
-        funcao_envio(*args)
+        funcao_envio(*args, **kwargs)
     threading.Thread(target=enviar).start()
 
 # 📢 --- HANDLERS DE EVENTOS ---
@@ -156,11 +156,11 @@ def detectar_risadas(msg):
     user_id = msg.from_user.id
     agora = agora_brasilia()
 
-    # Verifica se é risada
     if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
         ultima_resposta = ultimo_risada_respondida.get(user_id)
-        intervalo = (agora - ultima_resposta).total_seconds() if ultima_resposta else None
-        if intervalo and intervalo < random.randint(15, 60):
+        intervalo = (agora - ultima_resposta).total_seconds() if ultima_resposta else float('inf')
+
+        if intervalo < 60:
             return
 
         qtde_k = texto.count('k')
@@ -168,15 +168,16 @@ def detectar_risadas(msg):
         if qtde_k >= 6:
             sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
             if sticks:
-                responder_com_atraso(bot.send_sticker, msg.chat.id, random.choice(sticks), reply_to_message_id=msg.message_id)
-
+                sticker = random.choice(sticks)
+                responder_com_atraso(bot.send_sticker, msg.chat.id, sticker, delay=2, reply_to_message_id=msg.message_id)
         else:
             frases = carregar_json(ARQUIVOS_JSON["risadas"])
             nome = msg.from_user.first_name or "Espartano"
             resposta = escolher_frase(frases).replace("{nome}", nome)
-            responder_com_atraso(bot.send_message, msg.chat.id, resposta)
+            responder_com_atraso(bot.reply_to, msg, resposta, delay=2)
 
         ultimo_risada_respondida[user_id] = agora
+        
 def enviar_alerta_repeticao(chat_id):
     linha_sirene = "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨"
     linha1 = "💀REPETIR É COISA DE VASSALO💀"
