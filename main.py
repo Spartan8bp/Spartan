@@ -190,7 +190,7 @@ def enviar_alerta_repeticao(chat_id):
             msg = bot.send_message(chat_id, bloco)
             ids_msgs.append(msg.message_id)
             time.sleep(0.5)
-        time.sleep(60)
+        time.sleep(30)
         for msg_id in ids_msgs:
             try:
                 bot.delete_message(chat_id, msg_id)
