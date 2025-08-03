@@ -160,7 +160,7 @@ def detectar_risadas(msg):
     if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
         ultima_resposta = ultimo_risada_respondida.get(user_id)
         intervalo = (agora - ultima_resposta).total_seconds() if ultima_resposta else None
-        if intervalo and intervalo < random.randint(15, 600):
+        if intervalo and intervalo < random.randint(15, 60):
             return
 
         qtde_k = texto.count('k')
