@@ -177,15 +177,16 @@ def detectar_risadas(msg):
 
         ultimo_risada_respondida[user_id] = agora
 def enviar_alerta_repeticao(chat_id):
-    linha1 = "⚔️  ISTO AQUI É ESPARTA  ⚔️"
-    linha2 = "💿  NÃO UM DISCO ARRANHADO  💿"
-    mensagem_base = f"{linha1}\n{linha2}"
-    
+    linha_sirene = "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨"
+    linha1 = "💀REPETIR É COISA DE VASSALO💀"
+    linha2 = "⚔️ESPARTANOS ESCREVEM COM HONRA⚔️"
+    mensagem_base = f"{linha_sirene}\n{linha1}\n{linha2}\n{linha_sirene}"
+
     ids_msgs = []
 
     def enviar_e_apagar():
         for _ in range(10):  # 10 balões
-            bloco = "\n".join([mensagem_base] * 10)  # 20 linhas = 10x duas linhas
+            bloco = "\n".join([mensagem_base] * 5)  # 5x4 = 20 linhas por balão
             msg = bot.send_message(chat_id, bloco)
             ids_msgs.append(msg.message_id)
             time.sleep(0.5)
