@@ -93,6 +93,10 @@ def despedida_handler(message):
     bot.reply_to(message, texto)
 
 usuarios_sem_perfil_avisados = set()
+from collections import defaultdict
+
+# Dicionário para armazenar mensagens recentes por usuário
+historico_mensagens = defaultdict(list)
 
 @bot.message_handler(func=lambda msg: True)
 def monitorar_mensagens(msg):
@@ -101,6 +105,31 @@ def monitorar_mensagens(msg):
 
     user = msg.from_user
     contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
+
+        # Verifica mensagens repetidas
+    historico = historico_mensagens[user.id]
+    conteudo = None
+
+    if msg.content_type == "text":
+        conteudo = msg.text.strip()
+    elif msg.content_type == "sticker":
+        conteudo = msg.sticker.file_id
+    elif msg.content_type == "emoji":
+        conteudo = msg.text  # emojis geralmente vêm como texto
+
+    if conteudo:
+        agora = agora_brasilia()
+        historico.append((conteudo, agora))
+
+        # Remove mensagens antigas (mais de 1 min)
+        historico = [m for m in historico if (agora - m[1]).total_seconds() < 60]
+        historico_mensagens[user.id] = historico
+
+        # Verifica se há 2 ou mais mensagens repetidas consecutivas
+        if len(historico) >= 2 and all(m[0] == conteudo for m in historico[-2:]):
+            enviar_alerta_repeticao(msg.chat.id)
+            historico_mensagens[user.id] = []  # limpa para não repetir
+            return
 
     if sem_usuario(user) and (user.id not in usuarios_sem_perfil_avisados):
         frases = carregar_json(ARQUIVOS_JSON["sem_perfil"])
@@ -118,6 +147,7 @@ def detectar_cade_samuel(msg):
     padrao = r"\b(cad[eê]|onde|t[áa]|est[áa]|sumiu).*(samuel|samuca|samuka|chefe|dono)\b"
     if re.search(padrao, texto):
         frases = carregar_json(ARQUIVOS_JSON["cade_samuel"])
+        nome = nome_ou_mention(msg.from_user)
         resposta = escolher_frase(frases).replace("{nome}", nome)
         responder_com_atraso(bot.reply_to, msg, resposta)
 
@@ -146,6 +176,29 @@ def detectar_risadas(msg):
             responder_com_atraso(bot.reply_to, msg, resposta)
 
         ultimo_risada_respondida[user_id] = agora
+def enviar_alerta_repeticao(chat_id):
+    linha1 = "⚔️  ISTO AQUI É ESPARTA  ⚔️"
+    linha2 = "💿  NÃO UM DISCO ARRANHADO  💿"
+    mensagem_base = f"{linha1}\n{linha2}"
+    
+    ids_msgs = []
+
+    def enviar_e_apagar():
+        for _ in range(10):  # 10 balões
+            bloco = "\n".join([mensagem_base] * 10)  # 20 linhas = 10x duas linhas
+            msg = bot.send_message(chat_id, bloco)
+            ids_msgs.append(msg.message_id)
+            time.sleep(0.5)
+        time.sleep(60)
+        for msg_id in ids_msgs:
+            try:
+                bot.delete_message(chat_id, msg_id)
+            except:
+                pass
+
+    threading.Thread(target=enviar_e_apagar).start()
+
+    threading.Thread(target=enviar_e_apagar).start()
 
 def detectar_madrugada(msg):
     hora = agora_brasilia().hour
