@@ -125,19 +125,42 @@ def detectar_risadas(msg):
     user_id = msg.from_user.id
     agora = agora_brasilia()
 
-    # Verifica se é risada
-    if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
-        # Se já respondeu esse usuário nos últimos 120 minutos, ignore
+    padrao_risada = r"(k{3,}|haha+h+|rsrs+|hehe+)"
+    match = re.search(padrao_risada, texto)
+
+    if match:
         ultima_resposta = ultimo_risada_respondida.get(user_id)
-        if ultima_resposta and (agora - ultima_resposta).total_seconds() < 2 * 60 * 60:
-            return
 
-        frases = carregar_json(ARQUIVOS_JSON["risadas"])
-        nome = msg.from_user.first_name or "Espartano"
-        resposta = escolher_frase(frases).replace("{nome}", nome)
-        responder_com_atraso(bot.reply_to, msg, resposta)
+        # Tempo limite aleatório entre 15 segundos (15) e 10 minutos (600)
+        if ultima_resposta:
+            tempo_limite = random.randint(15, 600)
+            if (agora - ultima_resposta).total_seconds() < tempo_limite:
+                return  # Ainda dentro do intervalo
 
-        # Atualiza o horário da última resposta
+        trecho = match.group()
+
+        if "k" in trecho:
+            qtd_k = trecho.count("k")
+            if qtd_k >= 6:
+                # Sticker para risada exagerada
+                lista_stickers = carregar_json(ARQUIVOS_JSON["stickers_risadas"])
+                if lista_stickers:
+                    escolhido = random.choice(lista_stickers)
+                    responder_com_atraso(bot.send_sticker, msg.chat.id, escolhido)
+            else:
+                # Resposta com frase
+                frases = carregar_json(ARQUIVOS_JSON["risadas"])
+                nome = msg.from_user.first_name or "Espartano"
+                resposta = escolher_frase(frases).replace("{nome}", nome)
+                responder_com_atraso(bot.reply_to, msg, resposta)
+        else:
+            # Resposta com frase para outras formas de riso
+            frases = carregar_json(ARQUIVOS_JSON["risadas"])
+            nome = msg.from_user.first_name or "Espartano"
+            resposta = escolher_frase(frases).replace("{nome}", nome)
+            responder_com_atraso(bot.reply_to, msg, resposta)
+
+        # Atualiza o tempo da última resposta
         ultimo_risada_respondida[user_id] = agora
 
 def detectar_madrugada(msg):
