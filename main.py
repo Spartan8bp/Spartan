@@ -169,7 +169,7 @@ def detectar_risadas(msg):
             sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
             if sticks:
                 responder_com_atraso(bot.send_sticker, msg.chat.id, random.choice(sticks))
-        else:
+ else:
     frases = carregar_json(ARQUIVOS_JSON["risadas"])
     nome = msg.from_user.first_name or "Espartano"
     resposta = escolher_frase(frases).replace("{nome}", nome)
