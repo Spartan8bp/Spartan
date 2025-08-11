@@ -198,7 +198,7 @@ def agendador():
         hora = agora.strftime('%H:%M')
         if hora == "07:00":
             enviar_motivacional()
-        if hora == "20:09" or hora == "20:10":
+        if hora == "20:26" or hora == "20:27":
             parabens_aniversariantes()
         if hora == "11:00":
             parabens_do_mes()
