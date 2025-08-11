@@ -195,16 +195,23 @@ def relatorio_engajamento():
 def agendador():
     while True:
         agora = agora_brasilia()
-        hora = agora.strftime('%H:%M')
-        if hora == "07:00":
+        hora_minuto = agora.strftime('%H:%M')
+
+        if hora_minuto == "07:00":
             enviar_motivacional()
-        if hora == "20:26" or hora == "20:27":
+
+        # Dispara aniversariantes dentro de 2 minutos de tolerância
+        if "20:29" <= hora_minuto <= "20:30":
             parabens_aniversariantes()
-        if hora == "11:00":
+
+        if hora_minuto == "11:00":
             parabens_do_mes()
-        if hora == "23:50":
+
+        if hora_minuto == "23:50":
             relatorio_engajamento()
+
         time.sleep(60)
+)
 
 threading.Thread(target=agendador).start()
 
