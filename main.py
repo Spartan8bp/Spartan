@@ -23,7 +23,7 @@ FUSO_BRT = pytz.timezone('America/Sao_Paulo')
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-# 📂 --- ARQUIVOS JSON NA RAIZ DO PROJETO ---
+# 📂 --- ARQUIVOS JSON ---
 ARQUIVOS_JSON = {
     "bem_vindas": "frases_regras_bemvindo.json",
     "cade_samuel": "frases_cade_samuel.json",
@@ -39,7 +39,7 @@ ARQUIVOS_JSON = {
     "sticks_risadas": "sticks_risadas.json"
 }
 
-# 🔁 Dados de engajamento diário
+# 🔁 Engajamento
 contador_mensagens = {}
 usuarios_sem_perfil_avisados = set()
 historico_mensagens = defaultdict(list)
@@ -67,14 +67,14 @@ def nome_ou_mention(user):
 def sem_usuario(user):
     return not bool(user.username)
 
-# 🕒 Enviar mensagens com atraso
+# 🕒 Responder com atraso
 def responder_com_atraso(funcao_envio, *args, delay=20, **kwargs):
     def enviar():
         time.sleep(delay)
         funcao_envio(*args, **kwargs)
     threading.Thread(target=enviar).start()
 
-# 📢 --- HANDLERS DE EVENTOS ---
+# 📢 --- HANDLERS ---
 @bot.message_handler(content_types=["new_chat_members"])
 def boas_vindas_handler(message):
     for membro in message.new_chat_members:
@@ -117,9 +117,8 @@ def detectar_cade_samuel(msg):
 
 def detectar_risadas(msg):
     texto = (msg.text or '').lower()
-
     if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
-        if random.random() > 0.3:  # Apenas 30% de chance de responder
+        if random.random() > 0.3:  # 30% de chance
             return
         sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
         if sticks:
@@ -139,11 +138,12 @@ def enviar_motivacional():
     bot.send_message(ID_GRUPO, f"💪 {frase}")
 
 def parabens_aniversariantes():
-    hoje = agora_brasilia().strftime('%d/%m')
+    hoje_dia = agora_brasilia().day
+    hoje_mes = agora_brasilia().month
     aniversarios = carregar_json(ARQUIVOS_JSON["dados_aniversarios"])
     frases = carregar_json(ARQUIVOS_JSON["aniversarios_dia"])
     for usuario, data in aniversarios.items():
-        if data == hoje:
+        if isinstance(data, dict) and data.get("dia") == hoje_dia and data.get("mes") == hoje_mes:
             mensagem = escolher_frase(frases).replace("{usuario}", usuario)
             bot.send_message(ID_GRUPO, f"🎈 Feliz aniversário, {usuario}! 🎉\n{mensagem}")
 
@@ -151,8 +151,8 @@ def parabens_do_mes():
     agora = agora_brasilia()
     ultimo_dia = (agora + datetime.timedelta(days=1)).day == 1
     if ultimo_dia:
-        mes = agora.strftime('%m')
-        aniversariantes = carregar_json(ARQUIVOS_JSON["dados_mes"]).get(mes, [])
+        mes = agora.month
+        aniversariantes = carregar_json(ARQUIVOS_JSON["dados_mes"]).get(str(mes), [])
         frases = carregar_json(ARQUIVOS_JSON["aniversarios_mes"])
         frase = escolher_frase(frases).replace("{nome}", "Espartanos")
         lista_nomes = "\n".join(aniversariantes)
@@ -161,11 +161,9 @@ def parabens_do_mes():
 def relatorio_engajamento():
     if not contador_mensagens:
         return
-
     top3 = sorted(contador_mensagens.items(), key=lambda x: x[1], reverse=True)[:3]
     frases = carregar_json(ARQUIVOS_JSON["engajamento"])
     texto = "📊 ENGAJAMENTO DIÁRIO 🏆🏆🏆\n\n"
-
     if top3:
         uid1, qtd1 = top3[0]
         user1 = bot.get_chat_member(ID_GRUPO, uid1).user
@@ -173,7 +171,6 @@ def relatorio_engajamento():
         frase_destaque = escolher_frase(frases).replace("{nome}", nome1)
         texto += f"🥇 {nome1} — 🗣️ {frase_destaque}\n\n"
         texto += f"🥇 1º lugar: {nome1} — {qtd1} msg\n"
-
         if len(top3) > 1:
             uid2, qtd2 = top3[1]
             nome2 = bot.get_chat_member(ID_GRUPO, uid2).user.first_name
@@ -182,7 +179,6 @@ def relatorio_engajamento():
             uid3, qtd3 = top3[2]
             nome3 = bot.get_chat_member(ID_GRUPO, uid3).user.first_name
             texto += f"🥉 3º lugar: {nome3} — {qtd3} msg"
-
     try:
         with open("trofeu_espartano.png", "rb") as img:
             bot.send_photo(ID_GRUPO, photo=img, caption="🏆")
@@ -191,27 +187,20 @@ def relatorio_engajamento():
     bot.send_message(ID_GRUPO, texto)
     contador_mensagens.clear()
 
-# 🔁 --- AGENDADOR EM THREAD SEPARADA ---
+# 🔁 --- AGENDADOR ---
 def agendador():
     while True:
         agora = agora_brasilia()
         hora_minuto = agora.strftime('%H:%M')
-
         if hora_minuto == "07:00":
             enviar_motivacional()
-
-        # Dispara aniversariantes dentro de 2 minutos de tolerância
-        if "20:29" <= hora_minuto <= "20:30":
+        if "21:27" <= hora_minuto <= "21:30":
             parabens_aniversariantes()
-
         if hora_minuto == "11:00":
             parabens_do_mes()
-
         if hora_minuto == "23:50":
             relatorio_engajamento()
-
         time.sleep(60)
-)
 
 threading.Thread(target=agendador).start()
 
