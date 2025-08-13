@@ -111,10 +111,6 @@ def cmd_ping(message):
 
 @bot.message_handler(commands=['addstick'])
 def cmd_addstick(message):
-    # só funciona no PRIVADO com o bot (avisa se tentar fora)
-    if message.chat.type != 'private':
-        bot.reply_to(message, "⚠️ Este comando só funciona no privado comigo.")
-        return
 
     # só o DONO pode usar
     if message.from_user.id != ID_DONO:
