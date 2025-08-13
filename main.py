@@ -44,6 +44,14 @@ contador_mensagens = {}
 usuarios_sem_perfil_avisados = set()
 historico_mensagens = defaultdict(list)
 
+# ⚙️ Anti-flood para risadas
+COOLDOWN_RISADA_SEG = int(os.getenv("COOLDOWN_RISADA_SEG", 300))  # 5 min padrão
+PROB_RISADA = float(os.getenv("PROB_RISADA", 0.15))               # 15% de chance
+ultimo_risada_por_chat = {}  # chat_id -> timestamp do último envio
+
+# Compila o regex uma vez só (mais leve)
+RISADA_RE = re.compile(r"(kkk+|ha(?:ha)+h*|rsrs+|hehe+)", re.IGNORECASE)
+
 # 📌 --- FUNÇÕES UTILITÁRIAS ---
 def carregar_json(nome_arquivo):
     try:
@@ -116,13 +124,30 @@ def detectar_cade_samuel(msg):
         responder_com_atraso(bot.reply_to, msg, resposta)
 
 def detectar_risadas(msg):
-    texto = (msg.text or '').lower()
-    if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
-        if random.random() > 0.3:  # 30% de chance
-            return
-        sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
-        if sticks:
-            responder_com_atraso(bot.send_sticker, msg.chat.id, random.choice(sticks), delay=5)
+    texto = (msg.text or '')
+    if not texto:
+        return
+
+    # Bate com "kkk", "hahaha", "rsrs", "hehe" etc.
+    if not RISADA_RE.search(texto):
+        return
+
+    chat_id = msg.chat.id
+    agora = time.time()
+
+    # Respeita cooldown por chat
+    ultimo = ultimo_risada_por_chat.get(chat_id, 0)
+    if agora - ultimo < COOLDOWN_RISADA_SEG:
+        return
+
+    # Chance de responder (quanto menor, menos respostas)
+    if random.random() > PROB_RISADA:
+        return
+
+    sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
+    if sticks:
+        ultimo_risada_por_chat[chat_id] = agora
+        responder_com_atraso(bot.send_sticker, chat_id, random.choice(sticks), delay=5)
 
 def detectar_madrugada(msg):
     hora = agora_brasilia().hour
