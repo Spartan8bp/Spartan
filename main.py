@@ -39,6 +39,11 @@ ARQUIVOS_JSON = {
     "sticks_risadas": "sticks_risadas.json"
 }
 
+# garante que o arquivo de sticks exista
+if not os.path.exists(ARQUIVOS_JSON["sticks_risadas"]):
+    with open(ARQUIVOS_JSON["sticks_risadas"], "w", encoding="utf-8") as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
+
 # 🔁 Engajamento
 contador_mensagens = {}
 usuarios_sem_perfil_avisados = set()
@@ -74,6 +79,18 @@ def nome_ou_mention(user):
 
 def sem_usuario(user):
     return not bool(user.username)
+
+# lock para escrita segura no arquivo de sticks
+sticks_lock = threading.Lock()
+
+def salvar_json_lista(caminho, dados):
+    try:
+        with open(caminho, "w", encoding="utf-8") as f:
+            json.dump(dados, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"❌ Erro ao salvar {caminho}: {e}")
+        return False
 
 # 🕒 Responder com atraso
 def responder_com_atraso(funcao_envio, *args, delay=20, **kwargs):
@@ -113,6 +130,67 @@ def monitorar_mensagens(msg):
     detectar_cade_samuel(msg)
     detectar_risadas(msg)
     detectar_madrugada(msg)
+
+@bot.message_handler(commands=['addstick'])
+def cmd_addstick(message):
+    # só funciona no PRIVADO com o bot (silencioso fora do privado)
+    if message.chat.type != 'private':
+        return
+
+    # só o DONO pode usar
+    if message.from_user.id != ID_DONO:
+        return
+
+    # duas formas de uso:
+    # a) responder a um sticker com /addstick  (preferida → usa file_id)
+    # b) /addstick <link_ou_file_id>
+    novo = None
+
+    # a) se respondeu a um sticker
+    if message.reply_to_message and message.reply_to_message.sticker:
+        novo = message.reply_to_message.sticker.file_id
+
+    # b) argumento de texto
+    if not novo:
+        partes = (message.text or "").split(maxsplit=1)
+        if len(partes) > 1:
+            novo = partes[1].strip()
+
+    if not novo:
+        bot.reply_to(
+            message,
+            "Como usar:\n"
+            "• Responda a um sticker com: /addstick\n"
+            "• Ou envie: /addstick <file_id ou link>\n\n"
+            "Dica: responder a um sticker é o mais seguro (usa o file_id)."
+        )
+        return
+
+    # carrega a lista, evita duplicado, salva
+    with sticks_lock:
+        lista = carregar_json(ARQUIVOS_JSON['sticks_risadas'])
+        if not isinstance(lista, list):
+            lista = []
+
+        if novo in lista:
+            bot.reply_to(message, "Esse sticker já está na lista ✅")
+            return
+
+        lista.append(novo)
+        ok = salvar_json_lista(ARQUIVOS_JSON['sticks_risadas'], lista)
+
+    if ok:
+        bot.reply_to(message, f"Adicionado! Agora são {len(lista)} stickers na lista.")
+    else:
+        bot.reply_to(message, "❌ Não consegui salvar. Veja os logs do servidor.")
+
+@bot.message_handler(commands=['countsticks'])
+def cmd_countsticks(message):
+    if message.chat.type != 'private' or message.from_user.id != ID_DONO:
+        return
+    lista = carregar_json(ARQUIVOS_JSON['sticks_risadas'])
+    total = len(lista) if isinstance(lista, list) else 0
+    bot.reply_to(message, f"Total de stickers cadastrados: {total}")
 
 def detectar_cade_samuel(msg):
     texto = (msg.text or '').lower()
