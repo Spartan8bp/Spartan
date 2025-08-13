@@ -20,7 +20,7 @@ ID_DONO = 1481389775
 FUSO_BRT = pytz.timezone('America/Sao_Paulo')
 
 # 🚀 Inicialização do bot e Flask
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(TOKEN, parse_mode=None)
 app = Flask(__name__)
 
 # 📂 --- ARQUIVOS JSON ---
@@ -97,53 +97,30 @@ def responder_com_atraso(funcao_envio, *args, delay=20, **kwargs):
     def enviar():
         time.sleep(delay)
         funcao_envio(*args, **kwargs)
-    threading.Thread(target=enviar).start()
+    threading.Thread(target=enviar, daemon=True).start()  # <<< daemon=True para não travar saída
 
-# 📢 --- HANDLERS ---
-@bot.message_handler(content_types=["new_chat_members"])
-def boas_vindas_handler(message):
-    for membro in message.new_chat_members:
-        nome = nome_ou_mention(membro)
-        frases = carregar_json(ARQUIVOS_JSON["bem_vindas"])
-        texto = escolher_frase(frases).replace("{nome}", nome)
-        bot.reply_to(message, texto)
+# 📢 --- HANDLERS DE COMANDO (ANTES DO GENÉRICO) ---  # <<<
+@bot.message_handler(commands=['start'])  # opcional, ajuda a validar o privado
+def cmd_start(message):
+    if message.chat.type == 'private':
+        bot.reply_to(message, "Olá! Estou ativo no privado. Use /addstick para adicionar stickers.")
 
-@bot.message_handler(content_types=['left_chat_member'])
-def despedida_handler(message):
-    nome = nome_ou_mention(message.left_chat_member)
-    frases = carregar_json(ARQUIVOS_JSON["despedidas"])
-    texto = escolher_frase(frases).replace("{nome}", nome)
-    bot.reply_to(message, texto)
-
-@bot.message_handler(func=lambda msg: True)
-def monitorar_mensagens(msg):
-    user = msg.from_user
-    contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
-
-    if sem_usuario(user) and (user.id not in usuarios_sem_perfil_avisados):
-        frases = carregar_json(ARQUIVOS_JSON["sem_perfil"])
-        nome = nome_ou_mention(user)
-        texto = escolher_frase(frases).replace("{nome}", nome)
-        responder_com_atraso(bot.reply_to, msg, f"⚠️ {texto}")
-        usuarios_sem_perfil_avisados.add(user.id)
-
-    detectar_cade_samuel(msg)
-    detectar_risadas(msg)
-    detectar_madrugada(msg)
+@bot.message_handler(commands=['ping'])   # opcional, diagnóstico rápido do privado
+def cmd_ping(message):
+    bot.reply_to(message, "pong ✅")
 
 @bot.message_handler(commands=['addstick'])
 def cmd_addstick(message):
-    # só funciona no PRIVADO com o bot (silencioso fora do privado)
+    # só funciona no PRIVADO com o bot (avisa se tentar fora)
     if message.chat.type != 'private':
+        bot.reply_to(message, "⚠️ Este comando só funciona no privado comigo.")
         return
 
     # só o DONO pode usar
     if message.from_user.id != ID_DONO:
+        bot.reply_to(message, "🚫 Apenas o dono pode adicionar novos stickers.")
         return
 
-    # duas formas de uso:
-    # a) responder a um sticker com /addstick  (preferida → usa file_id)
-    # b) /addstick <link_ou_file_id>
     novo = None
 
     # a) se respondeu a um sticker
@@ -157,12 +134,13 @@ def cmd_addstick(message):
             novo = partes[1].strip()
 
     if not novo:
+        # feedback imediato para confirmar que o comando foi recebido
         bot.reply_to(
             message,
-            "Como usar:\n"
-            "• Responda a um sticker com: /addstick\n"
-            "• Ou envie: /addstick <file_id ou link>\n\n"
-            "Dica: responder a um sticker é o mais seguro (usa o file_id)."
+            "✅ Comando recebido!\n"
+            "Agora envie um sticker respondendo com /addstick **ou** envie:\n"
+            "`/addstick <file_id>`\n\n"
+            "Dica: responder a um sticker é o mais seguro (usa o file_id).",
         )
         return
 
@@ -191,6 +169,39 @@ def cmd_countsticks(message):
     lista = carregar_json(ARQUIVOS_JSON['sticks_risadas'])
     total = len(lista) if isinstance(lista, list) else 0
     bot.reply_to(message, f"Total de stickers cadastrados: {total}")
+
+# 📢 --- HANDLERS DE EVENTO/GRUPO ---
+@bot.message_handler(content_types=["new_chat_members"])
+def boas_vindas_handler(message):
+    for membro in message.new_chat_members:
+        nome = nome_ou_mention(membro)
+        frases = carregar_json(ARQUIVOS_JSON["bem_vindas"])
+        texto = escolher_frase(frases).replace("{nome}", nome)
+        bot.reply_to(message, texto)
+
+@bot.message_handler(content_types=['left_chat_member'])
+def despedida_handler(message):
+    nome = nome_ou_mention(message.left_chat_member)
+    frases = carregar_json(ARQUIVOS_JSON["despedidas"])
+    texto = escolher_frase(frases).replace("{nome}", nome)
+    bot.reply_to(message, texto)
+
+# ⚠️ Handler genérico: AGORA IGNORA COMANDOS e foca em texto (e, se quiser, só grupos)  # <<<
+@bot.message_handler(func=lambda m: (m.text is not None) and (not m.text.startswith('/')))
+def monitorar_mensagens(msg):
+    user = msg.from_user
+    contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
+
+    if sem_usuario(user) and (user.id not in usuarios_sem_perfil_avisados):
+        frases = carregar_json(ARQUIVOS_JSON["sem_perfil"])
+        nome = nome_ou_mention(user)
+        texto = escolher_frase(frases).replace("{nome}", nome)
+        responder_com_atraso(bot.reply_to, msg, f"⚠️ {texto}")
+        usuarios_sem_perfil_avisados.add(user.id)
+
+    detectar_cade_samuel(msg)
+    detectar_risadas(msg)
+    detectar_madrugada(msg)
 
 def detectar_cade_samuel(msg):
     texto = (msg.text or '').lower()
@@ -305,12 +316,15 @@ def agendador():
             relatorio_engajamento()
         time.sleep(60)
 
-threading.Thread(target=agendador).start()
+threading.Thread(target=agendador, daemon=True).start()  # <<< daemon=True
 
 # 🌐 --- FLASK WEBHOOK ---
 @app.route("/", methods=["POST"])
 def webhook():
-    update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
+    raw = request.stream.read().decode("utf-8")
+    # print opcional para diagnosticar entrada de updates (inclui privados)
+    # print(f"🔔 Update recebido: {raw[:200]}...")  # cuidado com logs grandes
+    update = telebot.types.Update.de_json(raw)
     bot.process_new_updates([update])
     return "OK", 200
 
