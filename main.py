@@ -20,7 +20,7 @@ ID_DONO = 1481389775
 FUSO_BRT = pytz.timezone('America/Sao_Paulo')
 
 # 🚀 Inicialização do bot e Flask
-bot = telebot.TeleBot(TOKEN, parse_mode=None)
+bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 # 📂 --- ARQUIVOS JSON ---
@@ -39,23 +39,10 @@ ARQUIVOS_JSON = {
     "sticks_risadas": "sticks_risadas.json"
 }
 
-# garante que o arquivo de sticks exista
-if not os.path.exists(ARQUIVOS_JSON["sticks_risadas"]):
-    with open(ARQUIVOS_JSON["sticks_risadas"], "w", encoding="utf-8") as f:
-        json.dump([], f, ensure_ascii=False, indent=2)
-
 # 🔁 Engajamento
 contador_mensagens = {}
 usuarios_sem_perfil_avisados = set()
 historico_mensagens = defaultdict(list)
-
-# ⚙️ Anti-flood para risadas
-COOLDOWN_RISADA_SEG = int(os.getenv("COOLDOWN_RISADA_SEG", 300))  # 5 min padrão
-PROB_RISADA = float(os.getenv("PROB_RISADA", 0.15))               # 15% de chance
-ultimo_risada_por_chat = {}  # chat_id -> timestamp do último envio
-
-# Compila o regex uma vez só (mais leve)
-RISADA_RE = re.compile(r"(kkk+|ha(?:ha)+h*|rsrs+|hehe+)", re.IGNORECASE)
 
 # 📌 --- FUNÇÕES UTILITÁRIAS ---
 def carregar_json(nome_arquivo):
@@ -80,93 +67,14 @@ def nome_ou_mention(user):
 def sem_usuario(user):
     return not bool(user.username)
 
-# lock para escrita segura no arquivo de sticks
-sticks_lock = threading.Lock()
-
-def salvar_json_lista(caminho, dados):
-    try:
-        with open(caminho, "w", encoding="utf-8") as f:
-            json.dump(dados, f, ensure_ascii=False, indent=2)
-        return True
-    except Exception as e:
-        print(f"❌ Erro ao salvar {caminho}: {e}")
-        return False
-
 # 🕒 Responder com atraso
 def responder_com_atraso(funcao_envio, *args, delay=20, **kwargs):
     def enviar():
         time.sleep(delay)
         funcao_envio(*args, **kwargs)
-    threading.Thread(target=enviar, daemon=True).start()  # <<< daemon=True para não travar saída
+    threading.Thread(target=enviar).start()
 
-# 📢 --- HANDLERS DE COMANDO (ANTES DO GENÉRICO) ---  # <<<
-@bot.message_handler(commands=['start'])  # opcional, ajuda a validar o privado
-def cmd_start(message):
-    if message.chat.type == 'private':
-        bot.reply_to(message, "Olá! Estou ativo no privado. Use /addstick para adicionar stickers.")
-
-@bot.message_handler(commands=['ping'])   # opcional, diagnóstico rápido do privado
-def cmd_ping(message):
-    bot.reply_to(message, "pong ✅")
-
-@bot.message_handler(commands=['addstick'])
-def cmd_addstick(message):
-
-    # só o DONO pode usar
-    if message.from_user.id != ID_DONO:
-        bot.reply_to(message, "🚫 Apenas o dono pode adicionar novos stickers.")
-        return
-
-    novo = None
-
-    # a) se respondeu a um sticker
-    if message.reply_to_message and message.reply_to_message.sticker:
-        novo = message.reply_to_message.sticker.file_id
-
-    # b) argumento de texto
-    if not novo:
-        partes = (message.text or "").split(maxsplit=1)
-        if len(partes) > 1:
-            novo = partes[1].strip()
-
-    if not novo:
-        # feedback imediato para confirmar que o comando foi recebido
-        bot.reply_to(
-            message,
-            "✅ Comando recebido!\n"
-            "Agora envie um sticker respondendo com /addstick **ou** envie:\n"
-            "`/addstick <file_id>`\n\n"
-            "Dica: responder a um sticker é o mais seguro (usa o file_id).",
-        )
-        return
-
-    # carrega a lista, evita duplicado, salva
-    with sticks_lock:
-        lista = carregar_json(ARQUIVOS_JSON['sticks_risadas'])
-        if not isinstance(lista, list):
-            lista = []
-
-        if novo in lista:
-            bot.reply_to(message, "Esse sticker já está na lista ✅")
-            return
-
-        lista.append(novo)
-        ok = salvar_json_lista(ARQUIVOS_JSON['sticks_risadas'], lista)
-
-    if ok:
-        bot.reply_to(message, f"Adicionado! Agora são {len(lista)} stickers na lista.")
-    else:
-        bot.reply_to(message, "❌ Não consegui salvar. Veja os logs do servidor.")
-
-@bot.message_handler(commands=['countsticks'])
-def cmd_countsticks(message):
-    if message.chat.type != 'private' or message.from_user.id != ID_DONO:
-        return
-    lista = carregar_json(ARQUIVOS_JSON['sticks_risadas'])
-    total = len(lista) if isinstance(lista, list) else 0
-    bot.reply_to(message, f"Total de stickers cadastrados: {total}")
-
-# 📢 --- HANDLERS DE EVENTO/GRUPO ---
+# 📢 --- HANDLERS ---
 @bot.message_handler(content_types=["new_chat_members"])
 def boas_vindas_handler(message):
     for membro in message.new_chat_members:
@@ -182,8 +90,7 @@ def despedida_handler(message):
     texto = escolher_frase(frases).replace("{nome}", nome)
     bot.reply_to(message, texto)
 
-# ⚠️ Handler genérico: AGORA IGNORA COMANDOS e foca em texto (e, se quiser, só grupos)  # <<<
-@bot.message_handler(func=lambda m: (m.text is not None) and (not m.text.startswith('/')))
+@bot.message_handler(func=lambda msg: True)
 def monitorar_mensagens(msg):
     user = msg.from_user
     contador_mensagens[user.id] = contador_mensagens.get(user.id, 0) + 1
@@ -209,30 +116,13 @@ def detectar_cade_samuel(msg):
         responder_com_atraso(bot.reply_to, msg, resposta)
 
 def detectar_risadas(msg):
-    texto = (msg.text or '')
-    if not texto:
-        return
-
-    # Bate com "kkk", "hahaha", "rsrs", "hehe" etc.
-    if not RISADA_RE.search(texto):
-        return
-
-    chat_id = msg.chat.id
-    agora = time.time()
-
-    # Respeita cooldown por chat
-    ultimo = ultimo_risada_por_chat.get(chat_id, 0)
-    if agora - ultimo < COOLDOWN_RISADA_SEG:
-        return
-
-    # Chance de responder (quanto menor, menos respostas)
-    if random.random() > PROB_RISADA:
-        return
-
-    sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
-    if sticks:
-        ultimo_risada_por_chat[chat_id] = agora
-        responder_com_atraso(bot.send_sticker, chat_id, random.choice(sticks), delay=5)
+    texto = (msg.text or '').lower()
+    if re.search(r"(kkk+|haha+h+|rsrs+|hehe+)", texto):
+        if random.random() > 0.3:  # 30% de chance
+            return
+        sticks = carregar_json(ARQUIVOS_JSON["sticks_risadas"])
+        if sticks:
+            responder_com_atraso(bot.send_sticker, msg.chat.id, random.choice(sticks), delay=5)
 
 def detectar_madrugada(msg):
     hora = agora_brasilia().hour
@@ -312,15 +202,12 @@ def agendador():
             relatorio_engajamento()
         time.sleep(60)
 
-threading.Thread(target=agendador, daemon=True).start()  # <<< daemon=True
+threading.Thread(target=agendador).start()
 
 # 🌐 --- FLASK WEBHOOK ---
 @app.route("/", methods=["POST"])
 def webhook():
-    raw = request.stream.read().decode("utf-8")
-    # print opcional para diagnosticar entrada de updates (inclui privados)
-    # print(f"🔔 Update recebido: {raw[:200]}...")  # cuidado com logs grandes
-    update = telebot.types.Update.de_json(raw)
+    update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
     bot.process_new_updates([update])
     return "OK", 200
 
